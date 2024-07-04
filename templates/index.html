@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Wisata Bali</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="../static/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="wrapper">
+            <div class="judul">
+                <a href="">
+                    <img src="../static/image/nav_logo.png" alt="Logo" style="height: 40px; vertical-align: middle;">
+                    Dashboard Wisata
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="content-wrapper top-row">
+            <div class="card">
+                <h1>Maps Wisata</h1>
+                <div id="map" class="map"></div>
+                <div class="legend">
+                    <ul>
+                        <li><span class="tanah-lot"></span> Tanah Lot</li>
+                        <li><span class="gwk"></span> Garuda Wisnu Kencana</li>
+                        <li><span class="kelingking"></span>Kelingking Beach</li>
+                        <li><span class="kuta"></span> Kuta Beach</li>
+                        <li><span class="uluwatu"></span> Pura Uluwatu</li>
+                        <li><span class="diamond"></span>Diamond Beach</li>
+                        <li><span class="tegalalang"></span> Tegalalang</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h1>Distribusi Data Training</h1>
+                <div class="overall-data">
+                    <div class="icon">
+                        <img src="../static/image/Logo DATA.png" alt="Icon" width="32" height="32">
+                    </div>
+                    
+                    <div class="title-amount">
+                        
+                        <div class="title">Data Training</div>
+                        <div class="amount">23,842</div>
+                    </div>
+                </div>
+                <canvas id="chart"></canvas>
+            </div>
+        </div>
+        <div class="content-wrapper bottom-row">
+            <div class="card">
+                <h1>Sentiment Analysis</h1>
+                <div class="dropdown-container">
+                    <label for="destination">Pilih Wisata:</label>
+                    <select id="destination">
+                        <option value="overall">Overall Sentimen</option>
+                        <option value="tanah_lot">Tanah Lot</option>
+                        <option value="gwk">Garuda Wisnu Kencana</option>
+                        <option value="kelingking">Kelingking Beach</option>
+                        <option value="kuta">Kuta Beach</option>
+                        <option value="uluwatu">Pura Uluwatu</option>
+                        <option value="diamond">Diamond Beach</option>
+                        <option value="tegalalang">Tegalalang</option>
+                    </select>
+                    <label for="model">Model:</label>
+                    <select id="model">
+                        <option value="naive_bayes">Naive Bayes</option>
+                        <option value="svm">SVM</option>
+                        <option value="decision_tree">Decision Tree</option>
+                        <option value="random_forest">Random Forest</option>
+                        <option value="gradient_boosting">Gradient Boosting</option> <!-- Added Gradient Boosting option -->
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="bar-chart" class="bar-chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h1>Prediksi Komentar Baru</h1>
+                <form id="commentForm">
+                    <textarea id="komentar" name="komentar" rows="4" cols="50" required></textarea>
+                    <label for="modelChoice">Pilih Model:</label>
+                    <select id="modelChoice" name="modelChoice">
+                        <option value="naive_bayes">Naive Bayes</option>
+                        <option value="svm">SVM</option>
+                        <option value="decision_tree">Decision Tree</option>
+                        <option value="random_forest">Random Forest</option>
+                        <option value="gradient_boosting">Gradient Boosting</option> <!-- Added Gradient Boosting option -->
+                    </select>
+                    <button type="submit">Prediksi</button>
+                </form>
+                <div id="commentResult" class="result"></div>
+            </div>
+        </div>
+        </div>
+        
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Bar chart for overall data
+            var ctx = document.getElementById('chart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Tanah Lot', 'Garuda Wisnu Kencana', 'Kelingking Beach', 'Kuta Beach', 'Pura Uluwatu', 'Diamond Beach', 'Tegalalang'],
+                    datasets: [{
+                        label: 'Amount of Data',
+                        data: [3049, 3032, 1572, 2904, 4382, 1572, 4043],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)',
+                            'rgba(255, 99, 132, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Leaflet Map
+            var map = L.map('map').setView([-8.3405, 115.092], 10); // Set view to Bali
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            var places = [
+    { name: 'Tanah Lot', lat: -8.6216, lng: 115.0868, color: 'red' },
+    { name: 'Garuda Wisnu Kencana', lat: -8.8111, lng: 115.1684, color: 'blue' },
+    { name: 'Kelingking Beach', lat: -8.7369, lng: 115.4751, color: 'orange' },
+    { name: 'Kuta Beach', lat: -8.7176, lng: 115.1695, color: 'green' },
+    { name: 'Pura Uluwatu', lat: -8.8286, lng: 115.0836, color: 'blue' },
+    { name: 'Diamond Beach', lat: -8.7491, lng: 115.6018, color: 'purple' },
+    { name: 'Tegalalang', lat: -8.4367, lng: 115.2797, color: 'black' }
+];
+
+
+            places.forEach(function(place) {
+                var marker = L.circleMarker([place.lat, place.lng], {
+                    color: place.color,
+                    radius: 8
+                }).addTo(map);
+                marker.bindPopup('<b>' + place.name + '</b>').openPopup();
+            });
+
+            // Data for bar chart based on selection
+            const dataSets = {
+    'overall': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [11027, 11340, 854] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [10614, 11118, 787] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [21144, 42, 1033] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [21640, 2, 526] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [22554, 12, 453] } // Added overall calculation below
+    },
+    'tanah_lot': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [1605, 1372, 72] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [1537, 1371, 141] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [3047, 0, 2] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [3048, 0, 1] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [2854, 0, 46] } // Added Gradient Boosting data
+    },
+    'gwk': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [1427, 1587, 18] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [1404, 1592, 36] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [3018, 0, 14] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [3027, 0, 5] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [737, 0, 16] } // Added Gradient Boosting data
+    },
+    'kelingking': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [878, 683, 11] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [858, 689, 25] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [1569, 0, 3] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [1569, 0, 3] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [3810, 0, 100] } // Added Gradient Boosting data
+    },
+    'kuta': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [1572, 1281, 51] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [1517, 1293, 94] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [2858, 0, 46] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [2892, 0, 12] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [4159, 9, 100] } // Added Gradient Boosting data
+    },
+    'uluwatu': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [2054, 2258, 70] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [1942, 2308, 132] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [4291, 0, 91] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [4361, 0, 21] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [3222, 1, 56] } // Added Gradient Boosting data
+    },
+    'diamond': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [944, 621, 7] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [934, 620, 18] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [1558, 0, 14] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [1568, 0, 4] },
+    },
+    'tegalalang': {
+        'naive_bayes': { labels: ['Positive', 'Neutral', 'Negative'], data: [1547, 1548, 21] },
+        'svm': { labels: ['Positive', 'Neutral', 'Negative'], data: [1422, 1573, 48] },
+        'decision_tree': { labels: ['Positive', 'Neutral', 'Negative'], data: [3803, 42, 198] },
+        'random_forest': { labels: ['Positive', 'Neutral', 'Negative'], data: [3820, 2, 221] },
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [4160, 0, 107] } // Added Gradient Boosting data
+    },
+    'sanur': {
+        'gradient_boosting': { labels: ['Positive', 'Neutral', 'Negative'], data: [2812, 2, 28] } // Added Gradient Boosting data for Sanur
+    }
+};
+
+            // Initialize bar chart
+            const barChartCtx = document.getElementById('bar-chart').getContext('2d');
+            let barChart = new Chart(barChartCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Sentiment Analysis',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 99, 132, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 99, 132, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            function updateBarChart() {
+                const selectedDestination = document.getElementById('destination').value;
+                const selectedModel = document.getElementById('model').value;
+                const data = dataSets[selectedDestination][selectedModel];
+                
+                barChart.data.labels = data.labels;
+                barChart.data.datasets[0].data = data.data;
+                barChart.update();
+            }
+
+            document.getElementById('destination').addEventListener('change', updateBarChart);
+            document.getElementById('model').addEventListener('change', updateBarChart);
+
+            // Initial chart update
+            updateBarChart();
+        });
+        // Form submission
+        const form = document.getElementById('commentForm');
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const komentar = document.getElementById('komentar').value;
+                const modelChoice = document.getElementById('modelChoice').value;
+
+                fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ komentar: komentar, model: modelChoice }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('commentResult');
+                    resultDiv.innerHTML = `<p>Sentimen: ${data.sentiment}</p><p>Probability: ${data.confidence}</p>`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+    </script>
+</body>
+</html>
